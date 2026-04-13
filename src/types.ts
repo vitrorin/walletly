@@ -26,11 +26,11 @@ export interface DigestRecommendation {
 }
 
 export interface Digest {
-  id: string          // ISO week e.g. "2026-W15"
+  weekId: string      // ISO week e.g. "2026-W15" — matches the Firestore document key
   weekStart: number   // Unix ms
   weekEnd: number     // Unix ms
   generatedAt: number
-  totalSpend: number
+  totalSpend: number  // always positive — magnitude of expenses (excludes income/refunds)
   byCategory: Partial<Record<Category, number>>
   summary: string
   recommendations: DigestRecommendation[]

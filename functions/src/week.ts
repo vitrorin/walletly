@@ -17,6 +17,9 @@ export function getISOWeekId(date: Date = new Date()): string {
 
 /** Returns Monday 00:00:00 and Sunday 23:59:59 for a given ISO week ID */
 export function getWeekBounds(weekId: string): { start: Date; end: Date } {
+  if (!/^\d{4}-W(0[1-9]|[1-4]\d|5[0-3])$/.test(weekId)) {
+    throw new Error(`Invalid ISO week ID: "${weekId}"`)
+  }
   const [yearStr, weekStr] = weekId.split('-W')
   const year = Number(yearStr)
   const week = Number(weekStr)
