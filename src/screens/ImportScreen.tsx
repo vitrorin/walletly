@@ -39,7 +39,9 @@ export function ImportScreen() {
 
     let csvText: string
     if (Platform.OS === 'web') {
-      csvText = await pickFileWeb()
+      const result = await pickFileWeb()
+      if (!result) return  // user cancelled
+      csvText = result
     } else {
       const result = await DocumentPicker.getDocumentAsync({ type: 'text/csv' })
       if (result.canceled) return
@@ -64,12 +66,19 @@ export function ImportScreen() {
     setStep('importing')
     setLoading(true)
     try {
-      const batch = writeBatch(db)
-      for (const tx of parsed.transactions) {
-        const ref = doc(collection(db, 'users', user.uid, 'transactions'), uuid())
-        batch.set(ref, tx)
+      const BATCH_LIMIT = 500
+      const txChunks: typeof parsed.transactions[] = []
+      for (let i = 0; i < parsed.transactions.length; i += BATCH_LIMIT) {
+        txChunks.push(parsed.transactions.slice(i, i + BATCH_LIMIT))
       }
-      await batch.commit()
+      for (const chunk of txChunks) {
+        const batch = writeBatch(db)
+        for (const tx of chunk) {
+          const ref = doc(collection(db, 'users', user.uid, 'transactions'), uuid())
+          batch.set(ref, tx)
+        }
+        await batch.commit()
+      }
       await updateDoc(doc(db, 'users', user.uid), { importHashes: arrayUnion(parsed.fileHash) })
 
       // Trigger first digest if this is the first import
@@ -162,17 +171,19 @@ export function ImportScreen() {
   )
 }
 
-async function pickFileWeb(): Promise<string> {
-  return new Promise((resolve, reject) => {
+async function pickFileWeb(): Promise<string | null> {
+  return new Promise((resolve) => {
     // @ts-ignore — document is available in web environment
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.csv,text/csv'
     input.onchange = async () => {
       const file = input.files?.[0]
-      if (!file) return reject(new Error('No file selected'))
+      if (!file) { resolve(null); return }
       resolve(await file.text())
     }
+    // Resolve null if dialog is dismissed without selection
+    input.addEventListener('cancel', () => resolve(null))
     input.click()
   })
 }
