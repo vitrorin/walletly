@@ -49,18 +49,9 @@ function isTransactionData(d: admin.firestore.DocumentData): d is TransactionDat
   return typeof d.amount === 'number' && typeof d.category === 'string' && typeof d.excluded === 'boolean'
 }
 
-// ─── Cloud Function ───────────────────────────────────────────────────────────
+// ─── Exported so weeklyDigestScheduler can call it without HTTP overhead ─────
 
-export const generateDigest = onCall({ secrets: [claudeKey] }, async (request) => {
-  // NOTE: request.auth?.uid is used when the client calls directly (authenticated user).
-  // request.data?.uid is a fallback for the scheduler (Task 14), which calls server-side.
-  // Unauthenticated callers can pass arbitrary uid in data — acceptable risk since
-  // the worst case is generating a digest for someone else's aggregated (non-raw) data.
-  const uid: string = request.auth?.uid ?? request.data?.uid
-  const weekId: string = request.data?.weekId
-
-  if (!uid || !weekId) throw new HttpsError('invalid-argument', 'uid and weekId are required')
-
+export async function runDigest(uid: string, weekId: string, apiKey: string): Promise<void> {
   const { start, end } = getWeekBounds(weekId)
   const txSnap = await admin
     .firestore()
@@ -73,11 +64,9 @@ export const generateDigest = onCall({ secrets: [claudeKey] }, async (request) =
     .map((d) => d.data())
     .filter(isTransactionData)
   const agg = aggregateTransactions(transactions)
+  if (agg.count === 0) return
 
-  if (agg.count === 0) return { skipped: true }
-
-  const anthropic = new Anthropic({ apiKey: claudeKey.value() })
-
+  const anthropic = new Anthropic({ apiKey })
   const message = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 600,
@@ -85,27 +74,26 @@ export const generateDigest = onCall({ secrets: [claudeKey] }, async (request) =
 {
   "summary": "2-3 sentence overview of the week",
   "recommendations": [
-    {"title": "Short title", "detail": "1-2 sentence tip with specific numbers from the data"},
-    {"title": "Short title", "detail": "..."}
+    {"title": "Short title", "detail": "1-2 sentence tip with specific numbers from the data"}
   ]
 }
-Rules: be concise, realistic, non-judgmental. Include 2-3 recommendations. Acknowledge good habits too. Never invent merchants or amounts not in the data.`,
+Rules: be concise, realistic, non-judgmental. 2-3 recommendations. Acknowledge good habits too. Never invent merchants or amounts not in the data.`,
     messages: [{ role: 'user', content: buildClaudePrompt(agg, weekId) }],
   })
 
   const firstBlock = message.content[0]
   if (!firstBlock || firstBlock.type !== 'text') {
-    throw new HttpsError('internal', 'Claude response contained no text block')
+    throw new Error('Claude response contained no text block')
   }
   const raw = firstBlock.text
   let parsed: { summary: string; recommendations: { title: string; detail: string }[] }
   try {
     parsed = JSON.parse(raw)
   } catch {
-    throw new HttpsError('internal', 'Claude returned invalid JSON')
+    throw new Error('Claude returned invalid JSON')
   }
   if (typeof parsed.summary !== 'string' || !Array.isArray(parsed.recommendations)) {
-    throw new HttpsError('internal', 'Claude response did not match expected schema')
+    throw new Error('Claude response did not match expected schema')
   }
 
   const digestData: DigestData = {
@@ -117,11 +105,22 @@ Rules: be concise, realistic, non-judgmental. Include 2-3 recommendations. Ackno
     summary: parsed.summary,
     recommendations: parsed.recommendations,
   }
-
   await admin.firestore()
     .collection('users').doc(uid)
     .collection('digests').doc(weekId)
     .set(digestData)
+}
 
+// ─── Cloud Function ───────────────────────────────────────────────────────────
+
+export const generateDigest = onCall({ secrets: [claudeKey] }, async (request) => {
+  // NOTE: request.auth?.uid is used when the client calls directly (authenticated user).
+  // request.data?.uid is a fallback for the scheduler (Task 14), which calls server-side.
+  // Unauthenticated callers can pass arbitrary uid in data — acceptable risk since
+  // the worst case is generating a digest for someone else's aggregated (non-raw) data.
+  const uid: string = request.auth?.uid ?? request.data?.uid
+  const weekId: string = request.data?.weekId
+  if (!uid || !weekId) throw new HttpsError('invalid-argument', 'uid and weekId are required')
+  await runDigest(uid, weekId, claudeKey.value())
   return { success: true }
 })
