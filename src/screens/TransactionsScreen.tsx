@@ -99,7 +99,7 @@ export function TransactionsScreen() {
   }
 
   // C1 — toggleExcluded with error handling
-  async function toggleExcluded(txId: string, current: boolean) {
+  const toggleExcluded = useCallback(async (txId: string, current: boolean) => {
     if (!user) return
     setUpdateError(null)
     try {
@@ -107,7 +107,7 @@ export function TransactionsScreen() {
     } catch {
       setUpdateError('Could not update transaction. Check your connection.')
     }
-  }
+  }, [user])
 
   const filtered = transactions.filter((t) => {
     if (selectedCardId && t.cardId !== selectedCardId) return false
@@ -116,16 +116,10 @@ export function TransactionsScreen() {
   })
 
   // I3 — stable renderItem for FlatList
-  const renderItem = ({ item: tx }: { item: Transaction }) => {
+  const renderItem = useCallback(({ item: tx }: { item: Transaction }) => {
     const card = cards.find((c) => c.id === tx.cardId)
-    return (
-      <TransactionRow
-        tx={tx}
-        card={card}
-        onToggle={toggleExcluded}
-      />
-    )
-  }
+    return <TransactionRow tx={tx} card={card} onToggle={toggleExcluded} />
+  }, [cards, toggleExcluded])
 
   return (
     <View style={styles.container}>
