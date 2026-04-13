@@ -3,24 +3,29 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
 import { useDigest } from '../hooks/useDigest'
 import { getISOWeekId } from '../utils/week'
 
+function isoWeeksInYear(year: number): number {
+  // Dec 28 always falls in the last ISO week of its year
+  const dec28 = new Date(year, 11, 28)
+  return Number(getISOWeekId(dec28).split('-W')[1])
+}
+
 function prevWeekId(weekId: string): string {
   const [y, w] = weekId.split('-W').map(Number)
-  if (w === 1) return `${y - 1}-W52`
+  if (w === 1) return `${y - 1}-W${String(isoWeeksInYear(y - 1)).padStart(2, '0')}`
   return `${y}-W${String(w - 1).padStart(2, '0')}`
 }
 
 function nextWeekId(weekId: string): string {
   const [y, w] = weekId.split('-W').map(Number)
-  if (w === 52) return `${y + 1}-W01`
+  if (w === isoWeeksInYear(y)) return `${y + 1}-W01`
   return `${y}-W${String(w + 1).padStart(2, '0')}`
 }
 
-const CURRENT_WEEK = getISOWeekId()
-
 export function DigestScreen() {
-  const [weekId, setWeekId] = useState(CURRENT_WEEK)
-  const { digest, loading } = useDigest(weekId)
-  const isCurrentWeek = weekId === CURRENT_WEEK
+  const [currentWeek] = useState(() => getISOWeekId())
+  const [weekId, setWeekId] = useState(currentWeek)
+  const { digest, loading, error } = useDigest(weekId)
+  const isCurrentWeek = weekId === currentWeek
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -36,6 +41,12 @@ export function DigestScreen() {
       </View>
 
       {loading && <ActivityIndicator color="#6c63ff" style={{ marginTop: 40 }} />}
+
+      {!loading && error && (
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>Failed to load digest.</Text>
+        </View>
+      )}
 
       {!loading && !digest && (
         <View style={styles.empty}>
