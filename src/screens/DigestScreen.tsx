@@ -59,7 +59,7 @@ export function DigestScreen() {
               <Text style={styles.statValue}>${digest.totalSpend.toFixed(0)}</Text>
             </View>
             <View style={styles.stat}>
-              <Text style={styles.statLabel}>Transactions</Text>
+              <Text style={styles.statLabel}>By category</Text>
               <Text style={styles.statValue}>{Object.values(digest.byCategory).reduce((a, b) => a + (b ?? 0), 0).toFixed(0)}</Text>
             </View>
           </View>
