@@ -48,14 +48,14 @@ export function DigestScreen() {
         </View>
       )}
 
-      {!loading && !digest && (
+      {!loading && !error && !digest && (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>No digest yet for {weekId}</Text>
           <Text style={styles.emptySubtext}>Digests are generated each Monday, or right after your first import.</Text>
         </View>
       )}
 
-      {!loading && digest && (
+      {!loading && !error && digest && (
         <>
           {/* AI Summary */}
           <View style={styles.summaryCard}>
