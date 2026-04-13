@@ -47,7 +47,7 @@ ${categoryLines}`
 
 export const generateDigest = onCall({ secrets: [claudeKey] }, async (request) => {
   // Can be called by client (first import) or scheduler (uid + weekId in data)
-  const uid: string = request.data?.uid ?? request.auth?.uid
+  const uid: string = request.auth?.uid ?? request.data?.uid
   const weekId: string = request.data?.weekId
 
   if (!uid || !weekId) throw new HttpsError('invalid-argument', 'uid and weekId are required')
