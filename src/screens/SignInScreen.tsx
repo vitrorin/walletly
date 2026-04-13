@@ -8,7 +8,24 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
 } from 'firebase/auth'
+import { FirebaseError } from 'firebase/app'
 import { auth } from '../../firebase'
+
+function friendlyError(e: unknown): string {
+  if (e instanceof FirebaseError) {
+    switch (e.code) {
+      case 'auth/invalid-email': return 'Invalid email address.'
+      case 'auth/user-not-found':
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential': return 'Incorrect email or password.'
+      case 'auth/email-already-in-use': return 'An account with this email already exists.'
+      case 'auth/weak-password': return 'Password must be at least 6 characters.'
+      case 'auth/too-many-requests': return 'Too many attempts. Please try again later.'
+      default: return 'Something went wrong. Please try again.'
+    }
+  }
+  return 'Something went wrong. Please try again.'
+}
 
 export function SignInScreen() {
   const [email, setEmail] = useState('')
@@ -18,6 +35,10 @@ export function SignInScreen() {
   const [error, setError] = useState<string | null>(null)
 
   async function handleEmailAuth() {
+    if (!email.trim() || !password) {
+      setError('Please enter your email and password.')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -26,8 +47,8 @@ export function SignInScreen() {
       } else {
         await createUserWithEmailAndPassword(auth, email, password)
       }
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e))
     } finally {
       setLoading(false)
     }
@@ -39,8 +60,8 @@ export function SignInScreen() {
     setError(null)
     try {
       await signInWithPopup(auth, new GoogleAuthProvider())
-    } catch (e: any) {
-      setError(e.message)
+    } catch (e) {
+      setError(friendlyError(e))
     } finally {
       setLoading(false)
     }
