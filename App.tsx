@@ -1,37 +1,30 @@
-import 'react-native-get-random-values';
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar } from 'expo-status-bar';
-import { StripeProvider } from '@stripe/stripe-react-native';
-import { RootStackParamList } from './src/navigation';
-import { STRIPE_PUBLISHABLE_KEY } from './src/config';
-import HomeScreen from './src/screens/HomeScreen';
-import CreateBillScreen from './src/screens/CreateBillScreen';
-import BillDetailScreen from './src/screens/BillDetailScreen';
-import JoinBillScreen from './src/screens/JoinBillScreen';
+import 'react-native-get-random-values'
+import React from 'react'
+import { View, ActivityIndicator } from 'react-native'
+import { NavigationContainer } from '@react-navigation/native'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { useAuth } from './src/hooks/useAuth'
+import { SignInScreen } from './src/screens/SignInScreen'
+import { AppNavigator } from './src/navigation/AppNavigator'
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+function RootNavigator() {
+  const { user, loading } = useAuth()
+  if (loading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0f0f1a', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator color="#6c63ff" size="large" />
+      </View>
+    )
+  }
+  return user ? <AppNavigator /> : <SignInScreen />
+}
 
 export default function App() {
   return (
-    <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} merchantIdentifier="merchant.com.billsplit">
+    <SafeAreaProvider>
       <NavigationContainer>
-        <StatusBar style="auto" />
-        <Stack.Navigator
-          initialRouteName="Home"
-          screenOptions={{
-            headerStyle: { backgroundColor: '#f7f8fc' },
-            headerTintColor: '#4f46e5',
-            headerTitleStyle: { fontWeight: '700' },
-          }}
-        >
-          <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'BillSplit' }} />
-          <Stack.Screen name="CreateBill" component={CreateBillScreen} options={{ title: 'New Bill' }} />
-          <Stack.Screen name="BillDetail" component={BillDetailScreen} options={{ title: 'Bill Details' }} />
-          <Stack.Screen name="JoinBill" component={JoinBillScreen} options={{ title: 'Join a Bill' }} />
-        </Stack.Navigator>
+        <RootNavigator />
       </NavigationContainer>
-    </StripeProvider>
-  );
+    </SafeAreaProvider>
+  )
 }
