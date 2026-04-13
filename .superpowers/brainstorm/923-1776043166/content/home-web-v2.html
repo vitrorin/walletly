@@ -1,0 +1,113 @@
+<h2>Home Screen — Web Layout v2</h2>
+<p class="subtitle">Left sidebar nav, same content layout as before</p>
+
+<div class="mockup">
+  <div class="mockup-header">Web — left sidebar navigation</div>
+  <div class="mockup-body" style="background:#0f0f1a;padding:0;border-radius:0 0 8px 8px;overflow:hidden">
+
+    <div style="display:flex;min-height:440px">
+
+      <!-- Left sidebar nav -->
+      <div style="width:160px;background:#111;border-right:1px solid #1e1e2e;padding:16px 12px;display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <div style="color:#fff;font-size:14px;font-weight:700;margin-bottom:20px;padding:0 8px">Walletly</div>
+        <div style="background:#1e1a3a;color:#6c63ff;font-size:12px;font-weight:600;padding:8px 10px;border-radius:8px;display:flex;align-items:center;gap:8px">🏠 <span>Home</span></div>
+        <div style="color:#555;font-size:12px;padding:8px 10px;border-radius:8px;display:flex;align-items:center;gap:8px">💳 <span>Transactions</span></div>
+        <div style="color:#555;font-size:12px;padding:8px 10px;border-radius:8px;display:flex;align-items:center;gap:8px">📥 <span>Import</span></div>
+        <div style="color:#555;font-size:12px;padding:8px 10px;border-radius:8px;display:flex;align-items:center;gap:8px">✨ <span>Digest</span></div>
+        <div style="margin-top:auto;display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid #1e1e2e;padding-top:16px">
+          <div style="width:24px;height:24px;background:#6c63ff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;flex-shrink:0">V</div>
+          <span style="color:#555;font-size:11px">Account</span>
+        </div>
+      </div>
+
+      <!-- Main content area -->
+      <div style="display:flex;flex:1;gap:0">
+
+        <!-- Left column -->
+        <div style="flex:1;padding:20px;border-right:1px solid #1a1a2e">
+
+          <!-- Cards -->
+          <div style="color:#888;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Your cards</div>
+          <div style="display:flex;gap:10px;margin-bottom:20px">
+            <div style="flex:1;background:linear-gradient(135deg,#6c63ff,#3b3bb3);border-radius:12px;padding:14px;position:relative">
+              <div style="color:rgba(255,255,255,0.6);font-size:9px;margin-bottom:6px">CREDIT</div>
+              <div style="color:#fff;font-size:12px;font-weight:600;margin-bottom:12px">Chase Sapphire</div>
+              <div style="color:rgba(255,255,255,0.5);font-size:10px">•••• 4821</div>
+              <div style="position:absolute;top:12px;right:12px;color:rgba(255,255,255,0.2);font-size:18px">◎</div>
+            </div>
+            <div style="flex:1;background:linear-gradient(135deg,#11998e,#38ef7d);border-radius:12px;padding:14px;position:relative">
+              <div style="color:rgba(255,255,255,0.6);font-size:9px;margin-bottom:6px">DEBIT</div>
+              <div style="color:#fff;font-size:12px;font-weight:600;margin-bottom:12px">BofA Checking</div>
+              <div style="color:rgba(255,255,255,0.5);font-size:10px">•••• 2049</div>
+              <div style="position:absolute;top:12px;right:12px;color:rgba(255,255,255,0.2);font-size:18px">◎</div>
+            </div>
+            <div style="width:60px;border:2px dashed #2a2a3a;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#333;font-size:20px;cursor:pointer">+</div>
+          </div>
+
+          <!-- This week stats -->
+          <div style="color:#888;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">This week</div>
+          <div style="display:flex;gap:8px;margin-bottom:20px">
+            <div style="flex:1;background:#1a1a2e;border-radius:10px;padding:12px">
+              <div style="color:#888;font-size:10px;margin-bottom:4px">Spent</div>
+              <div style="color:#fff;font-size:20px;font-weight:700">$284</div>
+              <div style="color:#ff6b6b;font-size:10px;margin-top:2px">↑ 12% vs last week</div>
+            </div>
+            <div style="flex:1;background:#1a1a2e;border-radius:10px;padding:12px">
+              <div style="color:#888;font-size:10px;margin-bottom:4px">Transactions</div>
+              <div style="color:#fff;font-size:20px;font-weight:700">23</div>
+              <div style="color:#888;font-size:10px;margin-top:2px">across 2 cards</div>
+            </div>
+            <div style="flex:1;background:#1a1a2e;border-radius:10px;padding:12px">
+              <div style="color:#888;font-size:10px;margin-bottom:4px">Top category</div>
+              <div style="color:#fff;font-size:16px;font-weight:700">Dining</div>
+              <div style="color:#888;font-size:10px;margin-top:2px">$98 this week</div>
+            </div>
+          </div>
+
+          <!-- Category breakdown -->
+          <div style="color:#888;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">By category</div>
+          <div style="background:#1a1a2e;border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#ccc;font-size:12px">Dining</span><span style="color:#ccc;font-size:12px">$98</span></div>
+              <div style="background:#222;border-radius:4px;height:5px"><div style="background:#6c63ff;width:65%;height:5px;border-radius:4px"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#ccc;font-size:12px">Groceries</span><span style="color:#ccc;font-size:12px">$74</span></div>
+              <div style="background:#222;border-radius:4px;height:5px"><div style="background:#6c63ff;width:49%;height:5px;border-radius:4px"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#ccc;font-size:12px">Transport</span><span style="color:#ccc;font-size:12px">$52</span></div>
+              <div style="background:#222;border-radius:4px;height:5px"><div style="background:#6c63ff;width:35%;height:5px;border-radius:4px"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="color:#ccc;font-size:12px">Other</span><span style="color:#ccc;font-size:12px">$60</span></div>
+              <div style="background:#222;border-radius:4px;height:5px"><div style="background:#6c63ff;width:40%;height:5px;border-radius:4px"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column — digest -->
+        <div style="width:240px;padding:20px;display:flex;flex-direction:column;gap:12px">
+          <div style="color:#888;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">✨ Weekly Digest — Week 14</div>
+          <div style="background:linear-gradient(160deg,#1a1a2e,#12122a);border:1px solid #2a2a4a;border-radius:12px;padding:14px;flex:1">
+            <div style="color:#ccc;font-size:12px;line-height:1.6;margin-bottom:14px">"Your dining spend jumped 30% this week — mostly weekend nights. One easy win: cooking at home on Fridays could save ~$40/month."</div>
+            <div style="border-top:1px solid #2a2a3a;padding-top:12px;display:flex;flex-direction:column;gap:10px">
+              <div style="background:#1e1e3a;border-radius:8px;padding:10px">
+                <div style="color:#6c63ff;font-size:10px;font-weight:600;margin-bottom:4px">💡 Tip 1</div>
+                <div style="color:#aaa;font-size:11px;line-height:1.5">You have 4 active subscriptions totalling $47/mo. Worth reviewing Netflix + Spotify overlap.</div>
+              </div>
+              <div style="background:#1e1e3a;border-radius:8px;padding:10px">
+                <div style="color:#6c63ff;font-size:10px;font-weight:600;margin-bottom:4px">💡 Tip 2</div>
+                <div style="color:#aaa;font-size:11px;line-height:1.5">Grocery spend is consistent — good habit. Switching to Tuesday shops could cut impulse buys.</div>
+              </div>
+            </div>
+            <div style="margin-top:12px;color:#6c63ff;font-size:11px;text-align:center">See full digest →</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:16px">Left sidebar nav, everything else unchanged. Does this feel right?</p>

@@ -1,0 +1,66 @@
+<h2>Section 3: Screens & Navigation</h2>
+<p class="subtitle">Which navigation structure feels right for this app?</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Tab Bar — 4 tabs</h3>
+      <p style="margin-bottom:12px">A persistent bottom tab bar. Each tab is a distinct area of the app.</p>
+      <div style="background:#1a1a2e;border-radius:10px;padding:16px;font-family:monospace;font-size:13px;color:#a0a0c0">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <div style="flex:1;background:#16213e;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;margin-bottom:4px">🏠</div>
+            <div style="color:#6c63ff;font-size:11px">Home</div>
+            <div style="font-size:10px;color:#555;margin-top:4px">Card overview<br/>+ latest digest</div>
+          </div>
+          <div style="flex:1;background:#16213e;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;margin-bottom:4px">💳</div>
+            <div style="color:#a0a0c0;font-size:11px">Transactions</div>
+            <div style="font-size:10px;color:#555;margin-top:4px">Browse & filter<br/>all activity</div>
+          </div>
+          <div style="flex:1;background:#16213e;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;margin-bottom:4px">📥</div>
+            <div style="color:#a0a0c0;font-size:11px">Import</div>
+            <div style="font-size:10px;color:#555;margin-top:4px">Upload CSV<br/>from bank</div>
+          </div>
+          <div style="flex:1;background:#16213e;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;margin-bottom:4px">✨</div>
+            <div style="color:#a0a0c0;font-size:11px">Digest</div>
+            <div style="font-size:10px;color:#555;margin-top:4px">Weekly AI<br/>summary</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:10px;color:#444">Home · Transactions · Import · Digest</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Home-centric — 3 tabs + stack</h3>
+      <p style="margin-bottom:12px">Home is the hub. Import and Digest are accessed from Home, not as top-level tabs.</p>
+      <div style="background:#1a1a2e;border-radius:10px;padding:16px;font-family:monospace;font-size:13px;color:#a0a0c0">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <div style="flex:1;background:#16213e;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;margin-bottom:4px">🏠</div>
+            <div style="color:#6c63ff;font-size:11px">Home</div>
+            <div style="font-size:10px;color:#555;margin-top:4px">Cards + digest<br/>preview + import btn</div>
+          </div>
+          <div style="flex:1;background:#16213e;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;margin-bottom:4px">💳</div>
+            <div style="color:#a0a0c0;font-size:11px">Transactions</div>
+            <div style="font-size:10px;color:#555;margin-top:4px">Browse & filter<br/>all activity</div>
+          </div>
+          <div style="flex:1;background:#16213e;border-radius:8px;padding:10px;text-align:center">
+            <div style="font-size:18px;margin-bottom:4px">👤</div>
+            <div style="color:#a0a0c0;font-size:11px">Profile</div>
+            <div style="font-size:10px;color:#555;margin-top:4px">Cards, auth<br/>settings</div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:10px;color:#444">Home · Transactions · Profile</div>
+        <div style="margin-top:10px;font-size:10px;color:#555;text-align:center">Import & Digest open as modal sheets from Home</div>
+      </div>
+    </div>
+  </div>
+</div>
