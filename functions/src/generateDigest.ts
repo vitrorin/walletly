@@ -43,10 +43,19 @@ By category:
 ${categoryLines}`
 }
 
+// ─── Module-level helpers ─────────────────────────────────────────────────────
+
+function isTransactionData(d: admin.firestore.DocumentData): d is TransactionData {
+  return typeof d.amount === 'number' && typeof d.category === 'string' && typeof d.excluded === 'boolean'
+}
+
 // ─── Cloud Function ───────────────────────────────────────────────────────────
 
 export const generateDigest = onCall({ secrets: [claudeKey] }, async (request) => {
-  // Can be called by client (first import) or scheduler (uid + weekId in data)
+  // NOTE: request.auth?.uid is used when the client calls directly (authenticated user).
+  // request.data?.uid is a fallback for the scheduler (Task 14), which calls server-side.
+  // Unauthenticated callers can pass arbitrary uid in data — acceptable risk since
+  // the worst case is generating a digest for someone else's aggregated (non-raw) data.
   const uid: string = request.auth?.uid ?? request.data?.uid
   const weekId: string = request.data?.weekId
 
@@ -60,7 +69,9 @@ export const generateDigest = onCall({ secrets: [claudeKey] }, async (request) =
     .where('date', '<=', end.getTime())
     .get()
 
-  const transactions = txSnap.docs.map((d) => d.data() as TransactionData)
+  const transactions = txSnap.docs
+    .map((d) => d.data())
+    .filter(isTransactionData)
   const agg = aggregateTransactions(transactions)
 
   if (agg.count === 0) return { skipped: true }
@@ -82,12 +93,19 @@ Rules: be concise, realistic, non-judgmental. Include 2-3 recommendations. Ackno
     messages: [{ role: 'user', content: buildClaudePrompt(agg, weekId) }],
   })
 
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
+  const firstBlock = message.content[0]
+  if (!firstBlock || firstBlock.type !== 'text') {
+    throw new HttpsError('internal', 'Claude response contained no text block')
+  }
+  const raw = firstBlock.text
   let parsed: { summary: string; recommendations: { title: string; detail: string }[] }
   try {
     parsed = JSON.parse(raw)
   } catch {
     throw new HttpsError('internal', 'Claude returned invalid JSON')
+  }
+  if (typeof parsed.summary !== 'string' || !Array.isArray(parsed.recommendations)) {
+    throw new HttpsError('internal', 'Claude response did not match expected schema')
   }
 
   const digestData: DigestData = {
