@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
+import React, { useState, useCallback, memo } from 'react'
+import { View, Text, ScrollView, TouchableOpacity, FlatList, StyleSheet } from 'react-native'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../hooks/useAuth'
 import { useCards } from '../hooks/useCards'
 import { useTransactions } from '../hooks/useTransactions'
-import { Category } from '../types'
+import { Card, Transaction, Category } from '../types'
 
 const CATEGORIES: Category[] = ['Dining', 'Groceries', 'Transport', 'Subscriptions', 'Other']
 
@@ -17,17 +17,96 @@ const CATEGORY_COLORS: Record<Category, { text: string; bg: string }> = {
   Other:         { text: '#888',    bg: '#2a2a2a' },
 }
 
+// ---------------------------------------------------------------------------
+// TransactionRow — extracted to avoid inline arrow functions per render row
+// ---------------------------------------------------------------------------
+interface TransactionRowProps {
+  tx: Transaction
+  card: Card | undefined
+  onToggle: (txId: string, current: boolean) => void
+}
+
+const TransactionRow = memo(function TransactionRow({ tx, card, onToggle }: TransactionRowProps) {
+  const isExpense = tx.amount < 0
+  const amountColor = isExpense ? '#ff6b6b' : '#6fd66f'
+  const amountStr = (isExpense ? '-' : '+') + '$' + Math.abs(tx.amount).toFixed(2)
+  const dateStr = new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const catColors = CATEGORY_COLORS[tx.category]
+
+  const handlePress = useCallback(() => {
+    onToggle(tx.id, tx.excluded)
+  }, [onToggle, tx.id, tx.excluded])
+
+  return (
+    <TouchableOpacity
+      style={[styles.txRow, tx.excluded && styles.txRowExcluded]}
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.txLeft}>
+        <Text style={styles.txMerchant}>{tx.merchant}</Text>
+        <View style={styles.txMeta}>
+          <Text style={styles.txDate}>{dateStr}</Text>
+          {card && (
+            <Text style={styles.txCard}>· {card.name} ···{card.lastFour}</Text>
+          )}
+        </View>
+      </View>
+      <View style={styles.txRight}>
+        <Text style={[
+          styles.txAmount,
+          { color: amountColor },
+          tx.excluded && styles.txAmountExcluded,
+        ]}>
+          {amountStr}
+        </Text>
+        <View style={[styles.catBadge, { backgroundColor: catColors.bg }]}>
+          <Text style={[styles.catBadgeText, { color: catColors.text }]}>
+            {tx.category}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  )
+})
+
+// ---------------------------------------------------------------------------
+// TransactionsScreen
+// ---------------------------------------------------------------------------
 export function TransactionsScreen() {
   const { user } = useAuth()
-  const { cards } = useCards()
-  const { transactions } = useTransactions()
+  const { cards, loading: cardsLoading, error: cardsError } = useCards()
+  const { transactions, loading: txLoading, error: txError } = useTransactions()
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
+  const [updateError, setUpdateError] = useState<string | null>(null)
 
+  // I1 — loading / error guards
+  if (txLoading || cardsLoading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.emptyText}>Loading…</Text>
+      </View>
+    )
+  }
+  if (txError || cardsError) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.emptyText}>Failed to load transactions.</Text>
+      </View>
+    )
+  }
+
+  // C1 — toggleExcluded with error handling
   async function toggleExcluded(txId: string, current: boolean) {
     if (!user) return
-    await updateDoc(doc(db, 'users', user.uid, 'transactions', txId), { excluded: !current })
+    setUpdateError(null)
+    try {
+      await updateDoc(doc(db, 'users', user.uid, 'transactions', txId), { excluded: !current })
+    } catch {
+      setUpdateError('Could not update transaction. Check your connection.')
+    }
   }
 
   const filtered = transactions.filter((t) => {
@@ -35,6 +114,18 @@ export function TransactionsScreen() {
     if (selectedCategory && t.category !== selectedCategory) return false
     return true
   })
+
+  // I3 — stable renderItem for FlatList
+  const renderItem = ({ item: tx }: { item: Transaction }) => {
+    const card = cards.find((c) => c.id === tx.cardId)
+    return (
+      <TransactionRow
+        tx={tx}
+        card={card}
+        onToggle={toggleExcluded}
+      />
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -104,53 +195,22 @@ export function TransactionsScreen() {
         })}
       </ScrollView>
 
-      {/* Transaction list */}
-      <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
-        {filtered.length === 0 && (
-          <Text style={styles.emptyText}>No transactions</Text>
-        )}
-        {filtered.map((tx) => {
-          const card = cards.find((c) => c.id === tx.cardId)
-          const isExpense = tx.amount < 0
-          const amountColor = isExpense ? '#ff6b6b' : '#6fd66f'
-          const amountStr = (isExpense ? '-' : '+') + '$' + Math.abs(tx.amount).toFixed(2)
-          const dateStr = new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          const catColors = CATEGORY_COLORS[tx.category]
+      {/* C1 — update error banner */}
+      {updateError && (
+        <TouchableOpacity onPress={() => setUpdateError(null)} style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>{updateError}</Text>
+        </TouchableOpacity>
+      )}
 
-          return (
-            <TouchableOpacity
-              key={tx.id}
-              style={[styles.txRow, tx.excluded && styles.txRowExcluded]}
-              onPress={() => toggleExcluded(tx.id, tx.excluded)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.txLeft}>
-                <Text style={styles.txMerchant}>{tx.merchant}</Text>
-                <View style={styles.txMeta}>
-                  <Text style={styles.txDate}>{dateStr}</Text>
-                  {card && (
-                    <Text style={styles.txCard}>· {card.name} ···{card.lastFour}</Text>
-                  )}
-                </View>
-              </View>
-              <View style={styles.txRight}>
-                <Text style={[
-                  styles.txAmount,
-                  { color: amountColor },
-                  tx.excluded && styles.txAmountExcluded,
-                ]}>
-                  {amountStr}
-                </Text>
-                <View style={[styles.catBadge, { backgroundColor: catColors.bg }]}>
-                  <Text style={[styles.catBadgeText, { color: catColors.text }]}>
-                    {tx.category}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          )
-        })}
-      </ScrollView>
+      {/* I3 — FlatList replaces ScrollView for the transaction list */}
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={<Text style={styles.emptyText}>No transactions</Text>}
+      />
     </View>
   )
 }
@@ -185,6 +245,16 @@ const styles = StyleSheet.create({
   },
   chipText: { color: '#555', fontSize: 12 },
   chipTextActive: { color: '#6c63ff' },
+
+  errorBanner: {
+    marginHorizontal: 16,
+    marginBottom: 6,
+    backgroundColor: '#3a1a1a',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  errorBannerText: { color: '#ff6b6b', fontSize: 12 },
 
   list: { flex: 1 },
   listContent: { paddingHorizontal: 16, paddingBottom: 32, gap: 2 },
