@@ -1,6 +1,6 @@
-export type RootStackParamList = {
-  Home: undefined;
-  CreateBill: undefined;
-  BillDetail: { billId: string };
-  JoinBill: undefined;
-};
+export type RootTabParamList = {
+  Home: undefined
+  Transactions: undefined
+  Import: undefined
+  Digest: undefined
+}

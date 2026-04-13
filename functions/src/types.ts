@@ -1,19 +1,9 @@
 export type Category = 'Dining' | 'Groceries' | 'Transport' | 'Subscriptions' | 'Other'
 
-export interface Card {
-  id: string
-  name: string
-  type: 'credit' | 'debit'
-  bank: string
-  lastFour: string
-  color: string
-}
-
-export interface Transaction {
-  id: string
+export interface TransactionData {
   cardId: string
-  date: number        // Unix ms
-  amount: number      // negative = expense, positive = refund/income
+  date: number
+  amount: number
   merchant: string
   category: Category
   rawDescription: string
@@ -25,10 +15,9 @@ export interface DigestRecommendation {
   detail: string
 }
 
-export interface Digest {
-  id: string          // ISO week e.g. "2026-W15"
-  weekStart: number   // Unix ms
-  weekEnd: number     // Unix ms
+export interface DigestData {
+  weekStart: number
+  weekEnd: number
   generatedAt: number
   totalSpend: number
   byCategory: Partial<Record<Category, number>>
