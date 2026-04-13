@@ -114,13 +114,15 @@ Rules: be concise, realistic, non-judgmental. 2-3 recommendations. Acknowledge g
 // ─── Cloud Function ───────────────────────────────────────────────────────────
 
 export const generateDigest = onCall({ secrets: [claudeKey] }, async (request) => {
-  // NOTE: request.auth?.uid is used when the client calls directly (authenticated user).
-  // request.data?.uid is a fallback for the scheduler (Task 14), which calls server-side.
-  // Unauthenticated callers can pass arbitrary uid in data — acceptable risk since
-  // the worst case is generating a digest for someone else's aggregated (non-raw) data.
-  const uid: string = request.auth?.uid ?? request.data?.uid
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Authentication required')
+  const uid = request.auth.uid
   const weekId: string = request.data?.weekId
-  if (!uid || !weekId) throw new HttpsError('invalid-argument', 'uid and weekId are required')
-  await runDigest(uid, weekId, claudeKey.value())
+  if (!weekId) throw new HttpsError('invalid-argument', 'weekId is required')
+  try {
+    await runDigest(uid, weekId, claudeKey.value())
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Unknown error'
+    throw new HttpsError('internal', msg)
+  }
   return { success: true }
 })
