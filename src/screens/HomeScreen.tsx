@@ -1,13 +1,13 @@
 import React from 'react'
 import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
 import { useCards } from '../hooks/useCards'
 import { useTransactions } from '../hooks/useTransactions'
 import { useDigest } from '../hooks/useDigest'
 import { getISOWeekId, getWeekBounds } from '../utils/week'
 import { Category } from '../types'
-
-const WEEK_ID = getISOWeekId()
-const { start, end } = getWeekBounds(WEEK_ID)
+import { RootTabParamList } from '../navigation'
 
 const CATEGORY_COLORS: Record<Category, string> = {
   Dining: '#9c6fd6',
@@ -18,6 +18,9 @@ const CATEGORY_COLORS: Record<Category, string> = {
 }
 
 export function HomeScreen() {
+  const WEEK_ID = getISOWeekId()
+  const { start, end } = getWeekBounds(WEEK_ID)
+  const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>()
   const { cards } = useCards()
   const { transactions } = useTransactions()
   const { digest } = useDigest(WEEK_ID)
@@ -98,7 +101,7 @@ export function HomeScreen() {
         <View style={styles.digestCard}>
           <Text style={styles.digestHeading}>✨ Weekly Digest</Text>
           <Text style={styles.digestSummary} numberOfLines={3}>{digest.summary}</Text>
-          <Text style={styles.digestLink}>See full digest →</Text>
+          <Text style={styles.digestLink} onPress={() => navigation.navigate('Digest')}>See full digest →</Text>
         </View>
       )}
     </ScrollView>
