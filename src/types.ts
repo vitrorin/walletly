@@ -7,6 +7,7 @@ export interface Card {
   bank: string
   lastFour: string
   color: string
+  createdAt?: import('firebase/firestore').Timestamp
 }
 
 export interface Transaction {
