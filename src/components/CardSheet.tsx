@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import {
   Modal, View, Text, TextInput, TouchableOpacity,
-  StyleSheet, Animated, Pressable, ActivityIndicator, Alert,
+  StyleSheet, Animated, Pressable, ActivityIndicator, Alert, ScrollView,
 } from 'react-native'
-import { collection, addDoc } from 'firebase/firestore'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -33,7 +33,7 @@ export function CardSheet({ visible, onClose }: Props) {
     if (visible) {
       Animated.spring(slideAnim, { toValue: 0, useNativeDriver: true }).start()
     }
-  }, [visible])
+  }, [visible, slideAnim])
 
   function resetForm() {
     setName('')
@@ -62,7 +62,11 @@ export function CardSheet({ visible, onClose }: Props) {
   }
 
   async function handleSave() {
-    if (!validate() || !user) return
+    if (!validate()) return
+    if (!user) {
+      Alert.alert('Sesión expirada', 'Vuelve a iniciar sesión')
+      return
+    }
     setSaving(true)
     try {
       await addDoc(collection(db, 'users', user.uid, 'cards'), {
@@ -71,10 +75,12 @@ export function CardSheet({ visible, onClose }: Props) {
         lastFour,
         type,
         color,
+        createdAt: serverTimestamp(),
       })
       close()
-    } catch (err: any) {
-      Alert.alert('Error', err.message ?? 'No se pudo guardar la tarjeta')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'No se pudo guardar la tarjeta'
+      Alert.alert('Error', msg)
     } finally {
       setSaving(false)
     }
@@ -84,6 +90,7 @@ export function CardSheet({ visible, onClose }: Props) {
     <Modal visible={visible} transparent animationType="none" onRequestClose={close}>
       <Pressable style={styles.backdrop} onPress={close} />
       <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
+        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <View style={styles.handle} />
         <Text style={styles.title}>Nueva tarjeta</Text>
 
@@ -157,6 +164,7 @@ export function CardSheet({ visible, onClose }: Props) {
             ? <ActivityIndicator color="#fff" />
             : <Text style={styles.saveBtnText}>Guardar tarjeta</Text>}
         </TouchableOpacity>
+        </ScrollView>
       </Animated.View>
     </Modal>
   )
