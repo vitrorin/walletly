@@ -59,7 +59,10 @@ export function HomeScreen() {
         {
           text: 'Eliminar',
           style: 'destructive',
-          onPress: () => deleteDoc(doc(db, 'users', user.uid, 'cards', card.id)),
+          onPress: () =>
+            deleteDoc(doc(db, 'users', user.uid, 'cards', card.id)).catch(() => {
+              Alert.alert('Error', 'No se pudo eliminar la tarjeta')
+            }),
         },
       ]
     )
