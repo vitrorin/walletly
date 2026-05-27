@@ -1,12 +1,16 @@
-import React from 'react'
-import { View, Text, ScrollView, StyleSheet } from 'react-native'
+import React, { useState } from 'react'
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs'
+import { doc, deleteDoc } from 'firebase/firestore'
+import { db } from '../../firebase'
+import { useAuth } from '../hooks/useAuth'
 import { useCards } from '../hooks/useCards'
 import { useTransactions } from '../hooks/useTransactions'
 import { useDigest } from '../hooks/useDigest'
+import { CardSheet } from '../components/CardSheet'
 import { getISOWeekId, getWeekBounds } from '../utils/week'
-import { Category } from '../types'
+import { Card, Category } from '../types'
 import { RootTabParamList } from '../navigation'
 
 const CATEGORY_COLORS: Record<Category, string> = {
@@ -21,11 +25,12 @@ export function HomeScreen() {
   const WEEK_ID = getISOWeekId()
   const { start, end } = getWeekBounds(WEEK_ID)
   const navigation = useNavigation<BottomTabNavigationProp<RootTabParamList>>()
+  const { user } = useAuth()
   const { cards } = useCards()
   const { transactions } = useTransactions()
   const { digest } = useDigest(WEEK_ID)
+  const [sheetOpen, setSheetOpen] = useState(false)
 
-  // Filter to this week only
   const weekStart = start.getTime()
   const weekEnd = end.getTime()
   const weekTransactions = transactions.filter(
@@ -44,79 +49,126 @@ export function HomeScreen() {
   const topCategory = sorted[0]?.[0] ?? '—'
   const maxAmount = sorted[0]?.[1] ?? 1
 
+  function handleDeleteCard(card: Card) {
+    if (!user) return
+    Alert.alert(
+      card.name,
+      '¿Eliminar esta tarjeta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: () => deleteDoc(doc(db, 'users', user.uid, 'cards', card.id)),
+        },
+      ]
+    )
+  }
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Card carousel */}
-      <Text style={styles.label}>Your cards</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
-        {cards.map((card) => (
-          <View key={card.id} style={[styles.card, { backgroundColor: card.color }]}>
-            <Text style={styles.cardType}>{card.type.toUpperCase()}</Text>
-            <Text style={styles.cardName}>{card.name}</Text>
-            <Text style={styles.cardLast}>•••• {card.lastFour}</Text>
+    <>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* Card carousel */}
+        <Text style={styles.label}>Your cards</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 4 }}>
+          {cards.map((card) => (
+            <TouchableOpacity
+              key={card.id}
+              style={[styles.card, { backgroundColor: card.color }]}
+              onLongPress={() => handleDeleteCard(card)}
+              delayLongPress={400}
+            >
+              <Text style={styles.cardType}>{card.type.toUpperCase()}</Text>
+              <Text style={styles.cardName}>{card.name}</Text>
+              <Text style={styles.cardLast}>•••• {card.lastFour}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.addCard} onPress={() => setSheetOpen(true)}>
+            <Text style={styles.addCardText}>+</Text>
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Stats */}
+        <Text style={styles.label}>This week</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.stat}>
+            <Text style={styles.statLabel}>Spent</Text>
+            <Text style={styles.statValue}>${totalSpend.toFixed(0)}</Text>
           </View>
-        ))}
-        <View style={styles.addCard}><Text style={styles.addCardText}>+</Text></View>
+          <View style={styles.stat}>
+            <Text style={styles.statLabel}>Transactions</Text>
+            <Text style={styles.statValue}>{weekTransactions.length}</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statLabel}>Top category</Text>
+            <Text style={[styles.statValue, { fontSize: 16 }]}>{topCategory}</Text>
+          </View>
+        </View>
+
+        {/* Category breakdown */}
+        <Text style={styles.label}>By category</Text>
+        <View style={styles.categoryCard}>
+          {sorted.map(([cat, amount]) => (
+            <View key={cat} style={{ gap: 4 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <Text style={styles.barLabel}>{cat}</Text>
+                <Text style={styles.barLabel}>${amount.toFixed(0)}</Text>
+              </View>
+              <View style={styles.barBg}>
+                <View style={[styles.barFill, {
+                  width: `${(amount / maxAmount) * 100}%` as any,
+                  backgroundColor: CATEGORY_COLORS[cat as Category],
+                }]} />
+              </View>
+            </View>
+          ))}
+          {sorted.length === 0 && (
+            <Text style={{ color: '#555', fontSize: 12 }}>No transactions this week</Text>
+          )}
+        </View>
+
+        {/* Digest preview */}
+        {digest && (
+          <View style={styles.digestCard}>
+            <Text style={styles.digestHeading}>✨ Weekly Digest</Text>
+            <Text style={styles.digestSummary} numberOfLines={3}>{digest.summary}</Text>
+            <Text style={styles.digestLink} onPress={() => navigation.navigate('Digest')}>
+              See full digest →
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
-      {/* Stats */}
-      <Text style={styles.label}>This week</Text>
-      <View style={styles.statsRow}>
-        <View style={styles.stat}>
-          <Text style={styles.statLabel}>Spent</Text>
-          <Text style={styles.statValue}>${totalSpend.toFixed(0)}</Text>
-        </View>
-        <View style={styles.stat}>
-          <Text style={styles.statLabel}>Transactions</Text>
-          <Text style={styles.statValue}>{weekTransactions.length}</Text>
-        </View>
-        <View style={styles.stat}>
-          <Text style={styles.statLabel}>Top category</Text>
-          <Text style={[styles.statValue, { fontSize: 16 }]}>{topCategory}</Text>
-        </View>
-      </View>
-
-      {/* Category breakdown */}
-      <Text style={styles.label}>By category</Text>
-      <View style={styles.categoryCard}>
-        {sorted.map(([cat, amount]) => (
-          <View key={cat} style={{ gap: 4 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-              <Text style={styles.barLabel}>{cat}</Text>
-              <Text style={styles.barLabel}>${amount.toFixed(0)}</Text>
-            </View>
-            <View style={styles.barBg}>
-              <View style={[styles.barFill, {
-                width: `${(amount / maxAmount) * 100}%` as any,
-                backgroundColor: CATEGORY_COLORS[cat as Category],
-              }]} />
-            </View>
-          </View>
-        ))}
-        {sorted.length === 0 && <Text style={{ color: '#555', fontSize: 12 }}>No transactions this week</Text>}
-      </View>
-
-      {/* Digest preview */}
-      {digest && (
-        <View style={styles.digestCard}>
-          <Text style={styles.digestHeading}>✨ Weekly Digest</Text>
-          <Text style={styles.digestSummary} numberOfLines={3}>{digest.summary}</Text>
-          <Text style={styles.digestLink} onPress={() => navigation.navigate('Digest')}>See full digest →</Text>
-        </View>
-      )}
-    </ScrollView>
+      <CardSheet visible={sheetOpen} onClose={() => setSheetOpen(false)} />
+    </>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f1a' },
   content: { padding: 16, paddingBottom: 32 },
-  label: { color: '#888', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, marginTop: 16, marginBottom: 10 },
+  label: {
+    color: '#888',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginTop: 16,
+    marginBottom: 10,
+  },
   card: { width: 180, borderRadius: 14, padding: 16, marginRight: 10, height: 100 },
   cardType: { color: 'rgba(255,255,255,0.7)', fontSize: 9, marginBottom: 8 },
   cardName: { color: '#fff', fontSize: 13, fontWeight: '600', marginBottom: 12 },
   cardLast: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },
-  addCard: { width: 70, height: 100, borderWidth: 2, borderColor: '#2a2a3a', borderStyle: 'dashed', borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  addCard: {
+    width: 70,
+    height: 100,
+    borderWidth: 2,
+    borderColor: '#2a2a3a',
+    borderStyle: 'dashed',
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   addCardText: { color: '#333', fontSize: 22 },
   statsRow: { flexDirection: 'row', gap: 8 },
   stat: { flex: 1, backgroundColor: '#1a1a2e', borderRadius: 10, padding: 12 },
@@ -126,8 +178,22 @@ const styles = StyleSheet.create({
   barLabel: { color: '#ccc', fontSize: 12 },
   barBg: { backgroundColor: '#222', borderRadius: 4, height: 5 },
   barFill: { height: 5, borderRadius: 4 },
-  digestCard: { marginTop: 4, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 10, padding: 14 },
-  digestHeading: { color: '#6c63ff', fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+  digestCard: {
+    marginTop: 4,
+    backgroundColor: '#1a1a2e',
+    borderWidth: 1,
+    borderColor: '#2a2a4a',
+    borderRadius: 10,
+    padding: 14,
+  },
+  digestHeading: {
+    color: '#6c63ff',
+    fontSize: 10,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
   digestSummary: { color: '#aaa', fontSize: 12, lineHeight: 18, marginBottom: 8 },
   digestLink: { color: '#6c63ff', fontSize: 11 },
 })
